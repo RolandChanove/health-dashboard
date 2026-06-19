@@ -1,3 +1,0 @@
-# Cloudflare Pages configuration
-name = "health-dashboard"
-pages_build_output_dir = "dist"
