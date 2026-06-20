@@ -117,6 +117,86 @@ export function ProfileProvider({ children }) {
         logs: { ...s.logs, foodTemplates: (s.logs.foodTemplates ?? []).filter((t) => t.id !== id) },
       }))
 
+    // --- saved meals ---
+    const addSavedMeal = (meal) =>
+      setState((s) => ({
+        ...s,
+        logs: { ...s.logs, savedMeals: [...(s.logs.savedMeals ?? []), meal] },
+      }))
+
+    const updateSavedMeal = (id, patch) =>
+      setState((s) => ({
+        ...s,
+        logs: {
+          ...s.logs,
+          savedMeals: (s.logs.savedMeals ?? []).map((m) => (m.id === id ? { ...m, ...patch } : m)),
+        },
+      }))
+
+    const deleteSavedMeal = (id) =>
+      setState((s) => ({
+        ...s,
+        logs: { ...s.logs, savedMeals: (s.logs.savedMeals ?? []).filter((m) => m.id !== id) },
+      }))
+
+    // --- body measurements ---
+    const addMeasurement = (entry) =>
+      setState((s) => {
+        const others = (s.logs.measurements ?? []).filter((m) => m.date !== entry.date)
+        return {
+          ...s,
+          logs: {
+            ...s.logs,
+            measurements: [...others, entry].sort((a, b) => a.date.localeCompare(b.date)),
+          },
+        }
+      })
+
+    const removeMeasurement = (date) =>
+      setState((s) => ({
+        ...s,
+        logs: { ...s.logs, measurements: (s.logs.measurements ?? []).filter((m) => m.date !== date) },
+      }))
+
+    // --- PR history ---
+    const addPR = (entry) =>
+      setState((s) => ({
+        ...s,
+        logs: {
+          ...s.logs,
+          prHistory: [...(s.logs.prHistory ?? []), entry].sort((a, b) => a.date.localeCompare(b.date)),
+          // also update the current max if this is a new record
+          lifts: {
+            ...s.logs.lifts,
+            [entry.lift]: Math.max(s.logs.lifts[entry.lift] ?? 0, entry.weightLb),
+          },
+        },
+      }))
+
+    const deletePR = (id) =>
+      setState((s) => ({
+        ...s,
+        logs: { ...s.logs, prHistory: (s.logs.prHistory ?? []).filter((p) => p.id !== id) },
+      }))
+
+    // --- workout exercise notes (RPE + freetext) ---
+    const updateExerciseNotes = (sessionId, exIdx, patch) =>
+      setState((s) => ({
+        ...s,
+        workouts: {
+          ...s.workouts,
+          sessions: s.workouts.sessions.map((sess) => {
+            if (sess.id !== sessionId) return sess
+            return {
+              ...sess,
+              exercises: sess.exercises.map((ex, i) =>
+                i === exIdx ? { ...ex, ...patch } : ex,
+              ),
+            }
+          }),
+        },
+      }))
+
     // --- workout templates ---
     const addWorkoutTemplate = (template) =>
       setState((s) => ({
@@ -381,6 +461,14 @@ export function ProfileProvider({ children }) {
       addFoodTemplate,
       updateFoodTemplate,
       deleteFoodTemplate,
+      addSavedMeal,
+      updateSavedMeal,
+      deleteSavedMeal,
+      addMeasurement,
+      removeMeasurement,
+      addPR,
+      deletePR,
+      updateExerciseNotes,
       addWorkoutTemplate,
       updateWorkoutTemplate,
       deleteWorkoutTemplate,

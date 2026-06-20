@@ -63,7 +63,17 @@ export function toCanonicalVolume(value, system) {
   return system === 'metric' ? mlToOz(Number(value)) : Number(value)
 }
 
-export const weightUnit = (system) => (system === 'metric' ? 'kg' : 'lb')
-export const volumeUnit = (system) => (system === 'metric' ? 'mL' : 'oz')
+export const weightUnit  = (system) => (system === 'metric' ? 'kg' : 'lb')
+export const volumeUnit  = (system) => (system === 'metric' ? 'mL' : 'oz')
+export const circumUnit  = (system) => (system === 'metric' ? 'cm' : 'in')
+
+// Circumference: canonical = inches, display = cm if metric
+export function displayCircum(inches, system) {
+  if (system === 'metric') return { value: round(inToCm(inches), 1), unit: 'cm' }
+  return { value: round(inches, 1), unit: 'in' }
+}
+export function toCanonicalCircum(value, system) {
+  return system === 'metric' ? cmToIn(Number(value)) : Number(value)
+}
 
 export { round }

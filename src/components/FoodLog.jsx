@@ -60,13 +60,10 @@ function blankCustom() {
 
 // ─── Add-food flow ────────────────────────────────────────────────────────────
 
-function AddFoodPanel({ date, onClose, addFoodEntry, addFoodTemplate, deleteFoodTemplate, foodTemplates }) {
+function AddFoodPanel({ date, onClose, addFoodEntry, addFoodTemplate, deleteFoodTemplate, foodTemplates, savedMeals, addSavedMeal, deleteSavedMeal }) {
   const [tab, setTab] = useState('search')
-  // 'search' | 'templates' | 'custom'
 
-  // Selected food for adjust step
   const [selected, setSelected] = useState(null)
-  // null → still picking; food object → adjust servings
 
   const handleSelect = useCallback((food) => {
     setSelected(food)
@@ -80,6 +77,13 @@ function AddFoodPanel({ date, onClose, addFoodEntry, addFoodTemplate, deleteFood
       servingSize: servingLabel,
       ...Object.fromEntries(ALL_KEYS.map((k) => [k, num(food[k])])),
     })
+    onClose()
+  }, [date, addFoodEntry, onClose])
+
+  const handleLogMeal = useCallback((meal) => {
+    for (const food of meal.foods) {
+      addFoodEntry({ ...food, id: crypto.randomUUID(), date })
+    }
     onClose()
   }, [date, addFoodEntry, onClose])
 
@@ -97,16 +101,15 @@ function AddFoodPanel({ date, onClose, addFoodEntry, addFoodTemplate, deleteFood
 
   return (
     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-slate-700">Add food</p>
         <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-lg leading-none">×</button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1">
+      <div className="flex gap-1 flex-wrap">
         {[
           { id: 'search',    label: 'Search' },
+          { id: 'meals',     label: 'Meals' },
           { id: 'templates', label: 'My Foods' },
           { id: 'custom',    label: 'Custom' },
         ].map((t) => (
@@ -114,9 +117,7 @@ function AddFoodPanel({ date, onClose, addFoodEntry, addFoodTemplate, deleteFood
             key={t.id}
             onClick={() => setTab(t.id)}
             className={`rounded-lg px-3 py-1 text-xs font-medium transition ${
-              tab === t.id
-                ? 'bg-brand-600 text-white'
-                : 'text-slate-500 hover:bg-slate-200'
+              tab === t.id ? 'bg-brand-600 text-white' : 'text-slate-500 hover:bg-slate-200'
             }`}
           >
             {t.label}
@@ -124,9 +125,9 @@ function AddFoodPanel({ date, onClose, addFoodEntry, addFoodTemplate, deleteFood
         ))}
       </div>
 
-      {/* Tab content */}
       {tab === 'search'    && <SearchTab    onSelect={handleSelect} />}
-      {tab === 'templates' && <TemplatesTab onSelect={handleSelect} foodTemplates={foodTemplates} deleteFoodTemplate={deleteFoodTemplate} addFoodEntry={addFoodEntry} date={date} onClose={onClose} />}
+      {tab === 'meals'     && <MealsTab     onLogMeal={handleLogMeal} savedMeals={savedMeals} addSavedMeal={addSavedMeal} deleteSavedMeal={deleteSavedMeal} />}
+      {tab === 'templates' && <TemplatesTab onSelect={handleSelect} foodTemplates={foodTemplates} deleteFoodTemplate={deleteFoodTemplate} />}
       {tab === 'custom'    && <CustomTab    onSelect={handleSelect} addFoodTemplate={addFoodTemplate} />}
     </div>
   )
@@ -193,6 +194,143 @@ function FoodResultRow({ food, onSelect }) {
         <p className="text-[10px] text-slate-400">P:{food.protein}g C:{food.carbs}g F:{food.fat}g</p>
       </div>
     </button>
+  )
+}
+
+// ─── Meals tab ────────────────────────────────────────────────────────────────
+
+function MealsTab({ onLogMeal, savedMeals, addSavedMeal, deleteSavedMeal }) {
+  const [building, setBuilding] = useState(false)
+  const [mealName, setMealName] = useState('')
+  const [mealFoods, setMealFoods] = useState([])
+  const [searchQ, setSearchQ] = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const timerRef = useRef(null)
+
+  useEffect(() => {
+    clearTimeout(timerRef.current)
+    if (!searchQ.trim()) { setSearchResults([]); return }
+    timerRef.current = setTimeout(() => setSearchResults(searchFoodDb(searchQ)), 200)
+    return () => clearTimeout(timerRef.current)
+  }, [searchQ])
+
+  function addToMeal(food) {
+    setMealFoods((prev) => [...prev, {
+      id: crypto.randomUUID(),
+      name: food.name,
+      servingSize: food.servingLabel,
+      ...Object.fromEntries(ALL_KEYS.map((k) => [k, num(food[k])])),
+    }])
+    setSearchQ('')
+    setSearchResults([])
+  }
+
+  function saveMeal() {
+    if (!mealName.trim() || mealFoods.length === 0) return
+    const totals = Object.fromEntries(ALL_KEYS.map((k) => [k, mealFoods.reduce((s, f) => s + num(f[k]), 0)]))
+    addSavedMeal({ id: crypto.randomUUID(), name: mealName.trim(), foods: mealFoods, ...totals })
+    setBuilding(false)
+    setMealName('')
+    setMealFoods([])
+  }
+
+  if (building) {
+    return (
+      <div className="space-y-2.5">
+        <input
+          autoFocus
+          type="text"
+          placeholder="Meal name (e.g. Post-workout shake)"
+          value={mealName}
+          onChange={(e) => setMealName(e.target.value)}
+          className="w-full rounded-lg px-3 py-1.5 text-sm ring-1 ring-slate-200 outline-none focus:ring-brand-600"
+        />
+        <input
+          type="text"
+          placeholder="Search foods to add…"
+          value={searchQ}
+          onChange={(e) => setSearchQ(e.target.value)}
+          className="w-full rounded-lg px-3 py-1.5 text-sm ring-1 ring-slate-200 outline-none focus:ring-brand-600"
+        />
+        {searchResults.length > 0 && (
+          <div className="space-y-1 max-h-32 overflow-y-auto">
+            {searchResults.map((food) => (
+              <button
+                key={food.id}
+                onClick={() => addToMeal(food)}
+                className="w-full flex justify-between rounded-lg bg-white px-3 py-2 text-left text-xs hover:bg-slate-100 ring-1 ring-slate-100 transition"
+              >
+                <span className="text-slate-700">{food.name}</span>
+                <span className="text-slate-400">{food.calories} kcal</span>
+              </button>
+            ))}
+          </div>
+        )}
+        {mealFoods.length > 0 && (
+          <div className="space-y-1 border-t border-slate-100 pt-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">In this meal</p>
+            {mealFoods.map((f, i) => (
+              <div key={f.id} className="flex items-center justify-between text-xs">
+                <span className="text-slate-600 truncate">{f.name}</span>
+                <div className="flex items-center gap-2 ml-2 shrink-0">
+                  <span className="text-slate-400">{f.calories} kcal</span>
+                  <button onClick={() => setMealFoods((prev) => prev.filter((_, j) => j !== i))} className="text-slate-300 hover:text-rose-500">×</button>
+                </div>
+              </div>
+            ))}
+            <p className="text-[10px] text-slate-400 pt-1">
+              Total: {mealFoods.reduce((s, f) => s + num(f.calories), 0)} kcal ·
+              P:{Math.round(mealFoods.reduce((s, f) => s + num(f.protein), 0))}g ·
+              C:{Math.round(mealFoods.reduce((s, f) => s + num(f.carbs), 0))}g ·
+              F:{Math.round(mealFoods.reduce((s, f) => s + num(f.fat), 0))}g
+            </p>
+          </div>
+        )}
+        <div className="flex gap-2 pt-1 border-t border-slate-100">
+          <button
+            onClick={saveMeal}
+            disabled={!mealName.trim() || mealFoods.length === 0}
+            className="rounded-lg bg-brand-600 px-4 py-1.5 text-sm font-semibold text-white hover:bg-brand-700 transition disabled:opacity-40"
+          >
+            Save meal
+          </button>
+          <button onClick={() => { setBuilding(false); setMealName(''); setMealFoods([]) }} className="rounded-lg px-4 py-1.5 text-sm text-slate-500 hover:bg-slate-100">
+            Cancel
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-2">
+      {savedMeals.length === 0 && (
+        <p className="py-2 text-center text-xs text-slate-400">No saved meals yet. Build one below.</p>
+      )}
+      <div className="space-y-1 max-h-52 overflow-y-auto">
+        {savedMeals.map((meal) => (
+          <div key={meal.id} className="flex items-center gap-2 rounded-lg bg-white px-3 py-2.5 ring-1 ring-slate-100">
+            <button onClick={() => onLogMeal(meal)} className="flex-1 min-w-0 text-left">
+              <p className="text-sm font-medium text-slate-800 truncate">{meal.name}</p>
+              <p className="text-xs text-slate-400">
+                {meal.foods.length} items · {Math.round(meal.calories ?? 0)} kcal ·
+                P:{Math.round(meal.protein ?? 0)}g C:{Math.round(meal.carbs ?? 0)}g F:{Math.round(meal.fat ?? 0)}g
+              </p>
+            </button>
+            <button
+              onClick={() => { if (confirm(`Delete "${meal.name}"?`)) deleteSavedMeal(meal.id) }}
+              className="text-slate-300 hover:text-rose-500 transition shrink-0"
+            >×</button>
+          </div>
+        ))}
+      </div>
+      <button
+        onClick={() => setBuilding(true)}
+        className="w-full rounded-lg border border-dashed border-slate-200 py-2 text-xs font-medium text-slate-400 hover:border-brand-600 hover:text-brand-700 transition"
+      >
+        + Create new meal
+      </button>
+    </div>
   )
 }
 
@@ -498,9 +636,11 @@ export function FoodLog() {
     profile, calc, logs,
     addFoodEntry, removeFoodEntry,
     addFoodTemplate, updateFoodTemplate, deleteFoodTemplate,
+    addSavedMeal, deleteSavedMeal,
   } = useProfile()
 
   const foodTemplates = logs.foodTemplates ?? []
+  const savedMeals = logs.savedMeals ?? []
 
   const [date, setDate] = useState(todayIso)
   const [adding, setAdding] = useState(false)
@@ -599,6 +739,9 @@ export function FoodLog() {
             addFoodTemplate={addFoodTemplate}
             deleteFoodTemplate={deleteFoodTemplate}
             foodTemplates={foodTemplates}
+            savedMeals={savedMeals}
+            addSavedMeal={addSavedMeal}
+            deleteSavedMeal={deleteSavedMeal}
           />
         </div>
       ) : (

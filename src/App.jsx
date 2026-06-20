@@ -7,6 +7,8 @@ import { WaterChart } from './components/WaterChart.jsx'
 import { CalorieCalculator } from './components/CalorieCalculator.jsx'
 import { FoodLog } from './components/FoodLog.jsx'
 import { StrengthRatios } from './components/StrengthRatios.jsx'
+import { MeasurementsPanel } from './components/MeasurementsPanel.jsx'
+import { PRPanel } from './components/PRPanel.jsx'
 import { WorkoutsTab } from './components/WorkoutsTab.jsx'
 import { TodayWorkout } from './components/TodayWorkout.jsx'
 import { SegmentedControl } from './components/ui/Field.jsx'
@@ -122,6 +124,9 @@ export default function App() {
             <div className="lg:col-span-2">
               <WaterChart />
             </div>
+            <div className="lg:col-span-2">
+              <MeasurementsPanel />
+            </div>
           </div>
         )}
 
@@ -135,6 +140,7 @@ export default function App() {
         {tab === 'strength' && (
           <div className="grid gap-5">
             <StrengthRatios />
+            <PRPanel />
           </div>
         )}
 

@@ -165,6 +165,12 @@ function SessionCard({ session, isMetric, wtUnit, onDelete }) {
                   )
                 })}
               </div>
+              {(ex.rpe != null || ex.notes) && (
+                <div className="mt-1.5 flex flex-wrap gap-3 text-xs text-slate-500">
+                  {ex.rpe != null && <span>RPE <span className="font-semibold text-slate-700">{ex.rpe}/10</span></span>}
+                  {ex.notes && <span className="italic">{ex.notes}</span>}
+                </div>
+              )}
             </div>
           ))}
           <button onClick={onDelete} className="mt-2 text-xs text-slate-400 hover:text-rose-500">Delete session</button>

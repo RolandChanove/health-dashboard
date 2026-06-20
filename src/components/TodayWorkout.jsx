@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useProfile } from '../context/ProfileContext.jsx'
 import { resolveWorkoutForDate, isoDaysAgo } from '../lib/storage.js'
 import { lbToKg, kgToLb, round } from '../lib/units.js'
@@ -11,7 +12,7 @@ function fmtLb(lb, isMetric) {
 }
 
 export function TodayWorkout({ onGoToWorkouts }) {
-  const { workouts, profile, startWorkoutSession, updateSet, addSet, removeSet, completeSession, deleteSession } = useProfile()
+  const { workouts, profile, startWorkoutSession, updateSet, addSet, removeSet, completeSession, deleteSession, updateExerciseNotes } = useProfile()
 
   const today = isoDaysAgo(0)
   const dayName = DAY_NAMES[new Date(today + 'T12:00:00').getDay()]
@@ -94,6 +95,7 @@ export function TodayWorkout({ onGoToWorkouts }) {
             updateSet={updateSet}
             addSet={addSet}
             removeSet={removeSet}
+            updateNotes={(patch) => updateExerciseNotes(session.id, exIdx, patch)}
           />
         ))}
 
@@ -117,8 +119,9 @@ function SetPreviewLabel(setDef, isMetric) {
   return fmtLb(setDef.weightLb ?? 0, isMetric)
 }
 
-function ExerciseLogger({ exercise, exIdx, sessionId, isMetric, locked, updateSet, addSet, removeSet }) {
+function ExerciseLogger({ exercise, exIdx, sessionId, isMetric, locked, updateSet, addSet, removeSet, updateNotes }) {
   const doneCount = exercise.sets.filter((s) => s.actual.done).length
+  const [showNotes, setShowNotes] = useState(false)
 
   return (
     <div className="rounded-xl bg-slate-50 p-3">
@@ -127,7 +130,6 @@ function ExerciseLogger({ exercise, exIdx, sessionId, isMetric, locked, updateSe
         <span className="text-xs text-slate-400">{doneCount}/{exercise.sets.length}</span>
       </div>
 
-      {/* Column headers */}
       <div className="grid grid-cols-[1.5rem_1fr_1fr_1.5rem] gap-x-2 mb-1 px-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
         <span>#</span>
         <span>Plan</span>
@@ -148,6 +150,48 @@ function ExerciseLogger({ exercise, exIdx, sessionId, isMetric, locked, updateSe
             canRemove={exercise.sets.length > 1}
           />
         ))}
+      </div>
+
+      {/* Notes / RPE area */}
+      <div className="mt-2 pt-2 border-t border-slate-200">
+        {!locked && (
+          <button
+            onClick={() => setShowNotes((v) => !v)}
+            className="text-xs text-slate-400 hover:text-brand-700"
+          >
+            {showNotes ? '▲ Hide notes' : `▼ RPE / notes${exercise.rpe != null ? ` · RPE ${exercise.rpe}` : ''}${exercise.notes ? ' · has notes' : ''}`}
+          </button>
+        )}
+        {(showNotes || locked) && (exercise.rpe != null || exercise.notes || !locked) && (
+          <div className="mt-2 space-y-2">
+            {locked ? (
+              <>
+                {exercise.rpe != null && <p className="text-xs text-slate-500">RPE <span className="font-semibold text-slate-700">{exercise.rpe}/10</span></p>}
+                {exercise.notes && <p className="text-xs text-slate-500 italic">{exercise.notes}</p>}
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-3">
+                  <label className="text-xs text-slate-500 shrink-0">RPE (1–10)</label>
+                  <input
+                    type="number" min={1} max={10} step={0.5}
+                    value={exercise.rpe ?? ''}
+                    onChange={(e) => updateNotes({ rpe: e.target.value === '' ? null : Number(e.target.value) })}
+                    className="w-16 rounded-lg px-2 py-1 text-xs ring-1 ring-slate-200 outline-none focus:ring-brand-600"
+                    placeholder="—"
+                  />
+                </div>
+                <textarea
+                  rows={2}
+                  value={exercise.notes ?? ''}
+                  onChange={(e) => updateNotes({ notes: e.target.value })}
+                  placeholder="Form notes, how it felt, deload next week…"
+                  className="w-full rounded-lg px-2 py-1.5 text-xs ring-1 ring-slate-200 outline-none focus:ring-brand-600 resize-none"
+                />
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {!locked && (

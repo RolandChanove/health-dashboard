@@ -48,6 +48,9 @@ export const DEFAULT_STATE = () => {
       lifts: { bench: 185, squat: 245, deadlift: 315 },
       foods: [],
       foodTemplates: [],
+      measurements: [],   // [{ date, chest, waist, hips, armL, armR, thighL, thighR, neck, calf }] in inches
+      savedMeals: [],     // [{ id, name, foods: [...foodEntry] }]
+      prHistory: [],      // [{ id, lift, date, weightLb, notes }]
     },
     calc: {
       goal: 'lose',
