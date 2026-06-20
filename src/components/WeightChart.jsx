@@ -109,24 +109,24 @@ export function WeightChart() {
       <div className="h-72 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 5, right: 10, bottom: 0, left: -10 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-            <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} minTickGap={24} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#2E2E30" />
+            <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#8E8E92' }} minTickGap={24} />
             <YAxis
               domain={['dataMin - 2', 'dataMax + 2']}
-              tick={{ fontSize: 11, fill: '#94a3b8' }}
+              tick={{ fontSize: 11, fill: '#8E8E92' }}
               width={44}
               tickFormatter={(v) => Math.round(v)}
             />
             <Tooltip
               formatter={(v, name) => [`${v} ${unit}`, name === 'actual' ? 'Logged' : 'Projected']}
               labelFormatter={(l) => `Date: ${l}`}
-              contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }}
+              contentStyle={{ borderRadius: 12, border: '1px solid #2E2E30', fontSize: 12, backgroundColor: '#141416', color: '#E0E0E2' }}
             />
             {showProjection && (
               <Line
                 type="monotone"
                 dataKey="projected"
-                stroke="#f59e0b"
+                stroke="#E8C547"
                 strokeWidth={2}
                 strokeDasharray="5 4"
                 dot={false}
@@ -137,9 +137,9 @@ export function WeightChart() {
             <Line
               type="monotone"
               dataKey="actual"
-              stroke="#1582f0"
+              stroke="#9C3848"
               strokeWidth={2.5}
-              dot={{ r: 2.5, fill: '#1582f0' }}
+              dot={{ r: 2.5, fill: '#9C3848' }}
               activeDot={{ r: 5 }}
               connectNulls
               isAnimationActive={false}
@@ -147,7 +147,8 @@ export function WeightChart() {
             <Brush
               dataKey="label"
               height={22}
-              stroke="#cbd5e1"
+              stroke="#3E3E42"
+              fill="#1C1C1E"
               travellerWidth={8}
             />
           </ComposedChart>

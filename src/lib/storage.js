@@ -1,5 +1,12 @@
 // localStorage persistence + JSON export/import + seed data.
 // Canonical units: weight=lb, height=in, water=oz. Dates are ISO 'YYYY-MM-DD'.
+//
+// Exercise set shape (in templates):
+//   { reps, weightType: 'fixed'|'bodyweight'|'percent1rm', weightLb, percentage, liftRef }
+//
+// Session set shape (logged):
+//   { planned: { reps, weightType, weightLb, percentage, liftRef } | null,
+//     actual:  { reps, weightLb, done } }
 
 const STORAGE_KEY = 'health-dashboard:v1'
 
@@ -9,17 +16,14 @@ export function isoDaysAgo(n) {
   return d.toISOString().slice(0, 10)
 }
 
-// Build ~14 days of realistic sample data so every chart renders on first load.
 function seedData() {
   const weights = []
   const water = []
-  // Start at 198 lb, gentle downward trend with daily noise.
   let w = 198
   for (let i = 13; i >= 0; i--) {
     w -= 0.25 + Math.random() * 0.25
     const noisy = w + (Math.random() - 0.5) * 1.2
     weights.push({ date: isoDaysAgo(i), weightLb: Math.round(noisy * 10) / 10 })
-    // Water between ~80 and ~130 oz.
     water.push({ date: isoDaysAgo(i), oz: Math.round(80 + Math.random() * 50) })
   }
   return { weights, water }
@@ -31,11 +35,11 @@ export const DEFAULT_STATE = () => {
     profile: {
       sex: 'male',
       age: 30,
-      heightIn: 70, // 5'10"
+      heightIn: 70,
       weightLb: seeded.weights[seeded.weights.length - 1].weightLb,
       bodyFatPct: 20,
       activity: 'moderate',
-      units: 'imperial', // 'imperial' | 'metric'
+      units: 'imperial',
     },
     logs: {
       weights: seeded.weights,
@@ -49,35 +53,78 @@ export const DEFAULT_STATE = () => {
       preset: 'balanced',
     },
     workouts: {
-      // WorkoutTemplate[]: { id, name, exercises: { id, name, defaultSets, defaultReps, defaultWeightLb }[] }
       templates: [],
       schedule: {
-        // weekly: { '0'–'6': templateId | null }
-        //   key present  → explicit assignment (null = rest, string = template)
-        //   key absent   → unassigned (falls through to active cycle)
         weekly: {},
-        // CycleSchedule[]: { id, name, startDate, days: (templateId | 'rest')[] }
         cycles: [],
         activeCycleId: null,
       },
-      // WorkoutSession[]: { id, date, templateId, templateName, completed, exercises }
-      // exercise: { exerciseId, name, sets: { reps, weightLb, done }[] }
       sessions: [],
     },
   }
 }
 
-// Resolve which workout template (or null) is scheduled for a given ISO date.
-// Weekly assignments take priority; active cycle fills unassigned days.
+// --- Migration helpers ---
+
+function migrateTemplate(t) {
+  if (!Array.isArray(t.exercises)) return t
+  // Old format: exercise had defaultSets/defaultReps/defaultWeightLb
+  const needsMigration = t.exercises.some((ex) => ex.defaultSets !== undefined)
+  if (!needsMigration) return t
+  return {
+    ...t,
+    exercises: t.exercises.map((ex) => ({
+      id: ex.id,
+      name: ex.name,
+      sets: Array.from({ length: Math.max(1, ex.defaultSets ?? 3) }, () => ({
+        reps: ex.defaultReps ?? 8,
+        weightType: 'fixed',
+        weightLb: ex.defaultWeightLb ?? 0,
+        percentage: null,
+        liftRef: null,
+      })),
+    })),
+  }
+}
+
+function migrateSession(sess) {
+  if (!Array.isArray(sess.exercises)) return sess
+  const needsMigration = sess.exercises.some(
+    (ex) => ex.sets.length > 0 && ex.sets[0].actual === undefined,
+  )
+  if (!needsMigration) return sess
+  return {
+    ...sess,
+    exercises: sess.exercises.map((ex) => ({
+      ...ex,
+      sets: ex.sets.map((set) => ({
+        planned: null,
+        actual: { reps: set.reps ?? 0, weightLb: set.weightLb ?? 0, done: set.done ?? false },
+      })),
+    })),
+  }
+}
+
+function migrateWorkouts(workouts) {
+  if (!workouts) return workouts
+  return {
+    ...workouts,
+    templates: (workouts.templates ?? []).map(migrateTemplate),
+    sessions: (workouts.sessions ?? []).map(migrateSession),
+  }
+}
+
+// --- Schedule resolution ---
+
 export function resolveWorkoutForDate(workouts, isoDate) {
   if (!workouts) return null
   const d = new Date(isoDate + 'T12:00:00')
-  const dow = String(d.getDay()) // '0'=Sun … '6'=Sat
+  const dow = String(d.getDay())
   const { weekly, cycles, activeCycleId } = workouts.schedule
 
   if (dow in weekly) {
     const tid = weekly[dow]
-    if (!tid) return null // explicitly rest
+    if (!tid) return null
     return workouts.templates.find((t) => t.id === tid) ?? null
   }
 
@@ -98,6 +145,8 @@ export function resolveWorkoutForDate(workouts, isoDate) {
   return null
 }
 
+// --- Persistence ---
+
 export function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -108,7 +157,7 @@ export function loadState() {
       profile: { ...def.profile, ...parsed.profile },
       logs: { ...def.logs, ...parsed.logs },
       calc: { ...def.calc, ...parsed.calc },
-      workouts: parsed.workouts ?? def.workouts,
+      workouts: migrateWorkouts(parsed.workouts ?? def.workouts),
     }
   } catch (e) {
     console.warn('Failed to load saved state, using defaults.', e)
@@ -128,12 +177,8 @@ export function clearState() {
   localStorage.removeItem(STORAGE_KEY)
 }
 
-// --- JSON export / import ---
-
 export function exportStateToFile(state) {
-  const blob = new Blob([JSON.stringify(state, null, 2)], {
-    type: 'application/json',
-  })
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -155,7 +200,7 @@ export function importStateFromFile(file) {
           profile: { ...def.profile, ...parsed.profile },
           logs: { ...def.logs, ...parsed.logs },
           calc: { ...def.calc, ...parsed.calc },
-          workouts: parsed.workouts ?? def.workouts,
+          workouts: migrateWorkouts(parsed.workouts ?? def.workouts),
         })
       } catch (e) {
         reject(e)

@@ -84,13 +84,13 @@ export function StatsSummary() {
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart data={radarData} outerRadius="72%">
-              <PolarGrid stroke="#e2e8f0" />
-              <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11, fill: '#64748b' }} />
+              <PolarGrid stroke="#2E2E30" />
+              <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11, fill: '#8E8E92' }} />
               <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
               <Radar
                 dataKey="value"
-                stroke="#1582f0"
-                fill="#1582f0"
+                stroke="#9C3848"
+                fill="#9C3848"
                 fillOpacity={0.35}
                 isAnimationActive={false}
               />

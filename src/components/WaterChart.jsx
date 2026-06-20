@@ -71,10 +71,10 @@ export function WaterChart() {
     >
       {/* Today progress bar */}
       <div className="mb-4">
-        <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100">
+        <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-sky-400 to-brand-500 transition-all"
-            style={{ width: `${pct}%` }}
+            className="h-full rounded-full transition-all"
+            style={{ width: `${pct}%`, background: 'linear-gradient(to right, #5D707F, #9C3848)' }}
           />
         </div>
       </div>
@@ -82,23 +82,23 @@ export function WaterChart() {
       <div className="h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 5, right: 10, bottom: 0, left: -10 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-            <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} minTickGap={16} />
-            <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} width={44} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#2E2E30" vertical={false} />
+            <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#8E8E92' }} minTickGap={16} />
+            <YAxis tick={{ fontSize: 11, fill: '#8E8E92' }} width={44} />
             <Tooltip
               formatter={(v) => [`${v} ${unit}`, 'Water']}
-              contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }}
-              cursor={{ fill: '#f1f5f9' }}
+              contentStyle={{ borderRadius: 12, border: '1px solid #2E2E30', fontSize: 12, backgroundColor: '#141416', color: '#E0E0E2' }}
+              cursor={{ fill: '#2E2E30' }}
             />
             <ReferenceLine
               y={goalDisplay}
-              stroke="#0ea5e9"
+              stroke="#5D707F"
               strokeDasharray="4 4"
-              label={{ value: 'Goal', position: 'right', fontSize: 11, fill: '#0ea5e9' }}
+              label={{ value: 'Goal', position: 'right', fontSize: 11, fill: '#5D707F' }}
             />
             <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
               {data.map((d, i) => (
-                <Cell key={i} fill={d.met ? '#0ea5e9' : '#7dd3fc'} />
+                <Cell key={i} fill={d.met ? '#9C3848' : '#5D707F'} />
               ))}
             </Bar>
           </BarChart>

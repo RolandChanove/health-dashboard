@@ -185,32 +185,48 @@ export function ProfileProvider({ children }) {
 
     // --- workout sessions (logging) ---
     const startWorkoutSession = (template, date) =>
-      setState((s) => ({
-        ...s,
-        workouts: {
-          ...s.workouts,
-          sessions: [
-            ...s.workouts.sessions,
-            {
-              id: crypto.randomUUID(),
-              date,
-              templateId: template.id,
-              templateName: template.name,
-              completed: false,
-              exercises: template.exercises.map((ex) => ({
-                exerciseId: ex.id,
-                name: ex.name,
-                sets: Array.from({ length: Math.max(1, ex.defaultSets) }, () => ({
-                  reps: ex.defaultReps,
-                  weightLb: ex.defaultWeightLb,
-                  done: false,
-                })),
-              })),
-            },
-          ],
-        },
-      }))
+      setState((s) => {
+        const lifts = s.logs.lifts
+        const bodyWeightLb = s.profile.weightLb
+        const session = {
+          id: crypto.randomUUID(),
+          date,
+          templateId: template.id,
+          templateName: template.name,
+          completed: false,
+          exercises: template.exercises.map((ex) => ({
+            exerciseId: ex.id,
+            name: ex.name,
+            sets: (ex.sets ?? []).map((setDef) => {
+              let plannedWeightLb = 0
+              if (setDef.weightType === 'fixed') {
+                plannedWeightLb = setDef.weightLb ?? 0
+              } else if (setDef.weightType === 'percent1rm') {
+                const base = lifts[setDef.liftRef] ?? 0
+                plannedWeightLb = Math.round((base * (setDef.percentage ?? 0)) / 100 * 4) / 4
+              } else if (setDef.weightType === 'bodyweight') {
+                plannedWeightLb = bodyWeightLb
+              }
+              return {
+                planned: {
+                  reps: setDef.reps,
+                  weightType: setDef.weightType,
+                  weightLb: plannedWeightLb,
+                  percentage: setDef.percentage,
+                  liftRef: setDef.liftRef,
+                },
+                actual: { reps: setDef.reps, weightLb: plannedWeightLb, done: false },
+              }
+            }),
+          })),
+        }
+        return {
+          ...s,
+          workouts: { ...s.workouts, sessions: [...s.workouts.sessions, session] },
+        }
+      })
 
+    // patch applies to set.actual
     const updateSet = (sessionId, exIdx, setIdx, patch) =>
       setState((s) => ({
         ...s,
@@ -224,7 +240,9 @@ export function ProfileProvider({ children }) {
                 if (i !== exIdx) return ex
                 return {
                   ...ex,
-                  sets: ex.sets.map((set, j) => (j === setIdx ? { ...set, ...patch } : set)),
+                  sets: ex.sets.map((set, j) =>
+                    j === setIdx ? { ...set, actual: { ...set.actual, ...patch } } : set,
+                  ),
                 }
               }),
             }
@@ -246,7 +264,17 @@ export function ProfileProvider({ children }) {
                 const last = ex.sets[ex.sets.length - 1]
                 return {
                   ...ex,
-                  sets: [...ex.sets, { reps: last?.reps ?? 8, weightLb: last?.weightLb ?? 0, done: false }],
+                  sets: [
+                    ...ex.sets,
+                    {
+                      planned: null,
+                      actual: {
+                        reps: last?.actual?.reps ?? 8,
+                        weightLb: last?.actual?.weightLb ?? 0,
+                        done: false,
+                      },
+                    },
+                  ],
                 }
               }),
             }

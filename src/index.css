@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 html,
@@ -14,13 +14,26 @@ body,
 
 body {
   margin: 0;
-  background: #f1f5f9;
-  color: #0f172a;
+  background: #000000;
+  color: #E0E0E2;
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Hide number input spinners for a cleaner look */
+/* Dark surface for all inputs and selects */
+input:not([type='checkbox']):not([type='radio']),
+select,
+textarea {
+  background-color: #1C1C1E;
+  color: #E0E0E2;
+}
+
+/* bg-white → dark card surface (segmented control active, inline form items) */
+.bg-white {
+  background-color: #282828 !important;
+}
+
+/* Number spinners hidden */
 input[type='number']::-webkit-outer-spin-button,
 input[type='number']::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -32,6 +45,9 @@ input[type='number'] {
 
 @layer components {
   .card {
-    @apply rounded-2xl bg-white shadow-sm ring-1 ring-slate-900/5;
+    @apply rounded-2xl ring-1;
+    background: #141416;
+    --tw-ring-color: rgba(255, 255, 255, 0.07);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
   }
 }
