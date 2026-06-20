@@ -14,7 +14,6 @@ const ProfileContext = createContext(null)
 export function ProfileProvider({ children }) {
   const [state, setState] = useState(loadState)
 
-  // Persist on every change (localStorage is the source of truth).
   useEffect(() => {
     saveState(state)
   }, [state])
@@ -47,7 +46,6 @@ export function ProfileProvider({ children }) {
         const weights = [...others, { date, weightLb: Number(weightLb) }].sort(
           (a, b) => a.date.localeCompare(b.date),
         )
-        // Keep the profile's current weight in sync with the latest entry.
         const latest = weights[weights.length - 1]
         return {
           ...s,
@@ -84,6 +82,216 @@ export function ProfileProvider({ children }) {
         logs: { ...s.logs, lifts: { ...s.logs.lifts, [lift]: Number(weight) } },
       }))
 
+    // --- workout templates ---
+    const addWorkoutTemplate = (template) =>
+      setState((s) => ({
+        ...s,
+        workouts: { ...s.workouts, templates: [...s.workouts.templates, template] },
+      }))
+
+    const updateWorkoutTemplate = (id, patch) =>
+      setState((s) => ({
+        ...s,
+        workouts: {
+          ...s.workouts,
+          templates: s.workouts.templates.map((t) => (t.id === id ? { ...t, ...patch } : t)),
+        },
+      }))
+
+    const deleteWorkoutTemplate = (id) =>
+      setState((s) => {
+        const weekly = Object.fromEntries(
+          Object.entries(s.workouts.schedule.weekly).map(([k, v]) => [k, v === id ? null : v]),
+        )
+        const cycles = s.workouts.schedule.cycles.map((c) => ({
+          ...c,
+          days: c.days.map((d) => (d === id ? 'rest' : d)),
+        }))
+        return {
+          ...s,
+          workouts: {
+            ...s.workouts,
+            templates: s.workouts.templates.filter((t) => t.id !== id),
+            schedule: { ...s.workouts.schedule, weekly, cycles },
+          },
+        }
+      })
+
+    // --- schedule ---
+    const setWeeklyDay = (dow, templateId) =>
+      setState((s) => ({
+        ...s,
+        workouts: {
+          ...s.workouts,
+          schedule: {
+            ...s.workouts.schedule,
+            weekly: { ...s.workouts.schedule.weekly, [String(dow)]: templateId },
+          },
+        },
+      }))
+
+    const clearWeeklyDay = (dow) =>
+      setState((s) => {
+        const weekly = { ...s.workouts.schedule.weekly }
+        delete weekly[String(dow)]
+        return {
+          ...s,
+          workouts: { ...s.workouts, schedule: { ...s.workouts.schedule, weekly } },
+        }
+      })
+
+    const addCycle = (cycle) =>
+      setState((s) => ({
+        ...s,
+        workouts: {
+          ...s.workouts,
+          schedule: { ...s.workouts.schedule, cycles: [...s.workouts.schedule.cycles, cycle] },
+        },
+      }))
+
+    const updateCycle = (id, patch) =>
+      setState((s) => ({
+        ...s,
+        workouts: {
+          ...s.workouts,
+          schedule: {
+            ...s.workouts.schedule,
+            cycles: s.workouts.schedule.cycles.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+          },
+        },
+      }))
+
+    const deleteCycle = (id) =>
+      setState((s) => ({
+        ...s,
+        workouts: {
+          ...s.workouts,
+          schedule: {
+            ...s.workouts.schedule,
+            cycles: s.workouts.schedule.cycles.filter((c) => c.id !== id),
+            activeCycleId: s.workouts.schedule.activeCycleId === id ? null : s.workouts.schedule.activeCycleId,
+          },
+        },
+      }))
+
+    const setActiveCycle = (id) =>
+      setState((s) => ({
+        ...s,
+        workouts: {
+          ...s.workouts,
+          schedule: { ...s.workouts.schedule, activeCycleId: id },
+        },
+      }))
+
+    // --- workout sessions (logging) ---
+    const startWorkoutSession = (template, date) =>
+      setState((s) => ({
+        ...s,
+        workouts: {
+          ...s.workouts,
+          sessions: [
+            ...s.workouts.sessions,
+            {
+              id: crypto.randomUUID(),
+              date,
+              templateId: template.id,
+              templateName: template.name,
+              completed: false,
+              exercises: template.exercises.map((ex) => ({
+                exerciseId: ex.id,
+                name: ex.name,
+                sets: Array.from({ length: Math.max(1, ex.defaultSets) }, () => ({
+                  reps: ex.defaultReps,
+                  weightLb: ex.defaultWeightLb,
+                  done: false,
+                })),
+              })),
+            },
+          ],
+        },
+      }))
+
+    const updateSet = (sessionId, exIdx, setIdx, patch) =>
+      setState((s) => ({
+        ...s,
+        workouts: {
+          ...s.workouts,
+          sessions: s.workouts.sessions.map((sess) => {
+            if (sess.id !== sessionId) return sess
+            return {
+              ...sess,
+              exercises: sess.exercises.map((ex, i) => {
+                if (i !== exIdx) return ex
+                return {
+                  ...ex,
+                  sets: ex.sets.map((set, j) => (j === setIdx ? { ...set, ...patch } : set)),
+                }
+              }),
+            }
+          }),
+        },
+      }))
+
+    const addSet = (sessionId, exIdx) =>
+      setState((s) => ({
+        ...s,
+        workouts: {
+          ...s.workouts,
+          sessions: s.workouts.sessions.map((sess) => {
+            if (sess.id !== sessionId) return sess
+            return {
+              ...sess,
+              exercises: sess.exercises.map((ex, i) => {
+                if (i !== exIdx) return ex
+                const last = ex.sets[ex.sets.length - 1]
+                return {
+                  ...ex,
+                  sets: [...ex.sets, { reps: last?.reps ?? 8, weightLb: last?.weightLb ?? 0, done: false }],
+                }
+              }),
+            }
+          }),
+        },
+      }))
+
+    const removeSet = (sessionId, exIdx, setIdx) =>
+      setState((s) => ({
+        ...s,
+        workouts: {
+          ...s.workouts,
+          sessions: s.workouts.sessions.map((sess) => {
+            if (sess.id !== sessionId) return sess
+            return {
+              ...sess,
+              exercises: sess.exercises.map((ex, i) => {
+                if (i !== exIdx) return ex
+                return { ...ex, sets: ex.sets.filter((_, j) => j !== setIdx) }
+              }),
+            }
+          }),
+        },
+      }))
+
+    const completeSession = (sessionId) =>
+      setState((s) => ({
+        ...s,
+        workouts: {
+          ...s.workouts,
+          sessions: s.workouts.sessions.map((sess) =>
+            sess.id === sessionId ? { ...sess, completed: true } : sess,
+          ),
+        },
+      }))
+
+    const deleteSession = (sessionId) =>
+      setState((s) => ({
+        ...s,
+        workouts: {
+          ...s.workouts,
+          sessions: s.workouts.sessions.filter((sess) => sess.id !== sessionId),
+        },
+      }))
+
     // --- data management ---
     const resetData = () => {
       clearState()
@@ -105,6 +313,21 @@ export function ProfileProvider({ children }) {
       addWater,
       setWaterGoal,
       setLift,
+      addWorkoutTemplate,
+      updateWorkoutTemplate,
+      deleteWorkoutTemplate,
+      setWeeklyDay,
+      clearWeeklyDay,
+      addCycle,
+      updateCycle,
+      deleteCycle,
+      setActiveCycle,
+      startWorkoutSession,
+      updateSet,
+      addSet,
+      removeSet,
+      completeSession,
+      deleteSession,
       resetData,
       exportData,
       importData,

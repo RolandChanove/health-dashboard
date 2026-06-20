@@ -7,6 +7,8 @@ import { WaterChart } from './components/WaterChart.jsx'
 import { CalorieCalculator } from './components/CalorieCalculator.jsx'
 import { MicronutrientPanel } from './components/MicronutrientPanel.jsx'
 import { StrengthRatios } from './components/StrengthRatios.jsx'
+import { WorkoutsTab } from './components/WorkoutsTab.jsx'
+import { TodayWorkout } from './components/TodayWorkout.jsx'
 import { SegmentedControl } from './components/ui/Field.jsx'
 
 const TABS = [
@@ -14,6 +16,7 @@ const TABS = [
   { id: 'tracking', label: 'Tracking' },
   { id: 'nutrition', label: 'Nutrition' },
   { id: 'strength', label: 'Strength' },
+  { id: 'workouts', label: 'Workouts' },
 ]
 
 export default function App() {
@@ -28,11 +31,11 @@ export default function App() {
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
             <div className="grid h-9 w-9 place-items-center rounded-xl bg-brand-600 text-white">
-              <HeartIcon />
+              <CorpusIcon />
             </div>
             <div>
-              <h1 className="text-lg font-bold leading-none text-slate-800">Health Dashboard</h1>
-              <p className="text-xs text-slate-400">Track · Calculate · Improve</p>
+              <h1 className="text-lg font-bold leading-none text-slate-800">Corpus</h1>
+              <p className="text-xs text-slate-400">Track · Train · Improve</p>
             </div>
           </div>
 
@@ -107,6 +110,7 @@ export default function App() {
           <div className="space-y-5">
             <ProfilePanel />
             <StatsSummary />
+            <TodayWorkout onGoToWorkouts={() => setTab('workouts')} />
           </div>
         )}
 
@@ -133,6 +137,8 @@ export default function App() {
             <StrengthRatios />
           </div>
         )}
+
+        {tab === 'workouts' && <WorkoutsTab />}
       </main>
 
       <footer className="mx-auto max-w-6xl px-4 pb-8 pt-2 text-center text-xs text-slate-400 sm:px-6">
@@ -142,19 +148,21 @@ export default function App() {
   )
 }
 
-function HeartIcon() {
+function CorpusIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="6" r="3" fill="white" />
       <path
-        d="M12 20s-7-4.35-7-9.5A3.5 3.5 0 0 1 12 7a3.5 3.5 0 0 1 7 3.5C19 15.65 12 20 12 20Z"
-        fill="white"
+        d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"
+        stroke="white"
+        strokeWidth="2"
+        strokeLinecap="round"
       />
       <path
-        d="M6 12h2.5L10 9l2 5 1.5-2H18"
-        stroke="#1582f0"
+        d="M8 13h8M10 16l-1 5M14 16l1 5"
+        stroke="#93c5fd"
         strokeWidth="1.4"
         strokeLinecap="round"
-        strokeLinejoin="round"
       />
     </svg>
   )

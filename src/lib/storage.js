@@ -48,7 +48,54 @@ export const DEFAULT_STATE = () => {
       rateLbPerWeek: 1,
       preset: 'balanced',
     },
+    workouts: {
+      // WorkoutTemplate[]: { id, name, exercises: { id, name, defaultSets, defaultReps, defaultWeightLb }[] }
+      templates: [],
+      schedule: {
+        // weekly: { '0'–'6': templateId | null }
+        //   key present  → explicit assignment (null = rest, string = template)
+        //   key absent   → unassigned (falls through to active cycle)
+        weekly: {},
+        // CycleSchedule[]: { id, name, startDate, days: (templateId | 'rest')[] }
+        cycles: [],
+        activeCycleId: null,
+      },
+      // WorkoutSession[]: { id, date, templateId, templateName, completed, exercises }
+      // exercise: { exerciseId, name, sets: { reps, weightLb, done }[] }
+      sessions: [],
+    },
   }
+}
+
+// Resolve which workout template (or null) is scheduled for a given ISO date.
+// Weekly assignments take priority; active cycle fills unassigned days.
+export function resolveWorkoutForDate(workouts, isoDate) {
+  if (!workouts) return null
+  const d = new Date(isoDate + 'T12:00:00')
+  const dow = String(d.getDay()) // '0'=Sun … '6'=Sat
+  const { weekly, cycles, activeCycleId } = workouts.schedule
+
+  if (dow in weekly) {
+    const tid = weekly[dow]
+    if (!tid) return null // explicitly rest
+    return workouts.templates.find((t) => t.id === tid) ?? null
+  }
+
+  if (activeCycleId) {
+    const cycle = cycles.find((c) => c.id === activeCycleId)
+    if (cycle?.startDate && cycle.days.length) {
+      const start = new Date(cycle.startDate + 'T12:00:00')
+      const diff = Math.floor((d - start) / 86400000)
+      if (diff >= 0) {
+        const key = cycle.days[diff % cycle.days.length]
+        if (key && key !== 'rest') {
+          return workouts.templates.find((t) => t.id === key) ?? null
+        }
+      }
+    }
+  }
+
+  return null
 }
 
 export function loadState() {
@@ -56,12 +103,12 @@ export function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return DEFAULT_STATE()
     const parsed = JSON.parse(raw)
-    // Shallow-merge over defaults so new fields don't break old saves.
     const def = DEFAULT_STATE()
     return {
       profile: { ...def.profile, ...parsed.profile },
       logs: { ...def.logs, ...parsed.logs },
       calc: { ...def.calc, ...parsed.calc },
+      workouts: parsed.workouts ?? def.workouts,
     }
   } catch (e) {
     console.warn('Failed to load saved state, using defaults.', e)
@@ -81,7 +128,7 @@ export function clearState() {
   localStorage.removeItem(STORAGE_KEY)
 }
 
-// --- JSON export / import (optional backup convenience) ---
+// --- JSON export / import ---
 
 export function exportStateToFile(state) {
   const blob = new Blob([JSON.stringify(state, null, 2)], {
@@ -90,7 +137,7 @@ export function exportStateToFile(state) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `health-dashboard-${new Date().toISOString().slice(0, 10)}.json`
+  a.download = `corpus-${new Date().toISOString().slice(0, 10)}.json`
   document.body.appendChild(a)
   a.click()
   a.remove()
@@ -108,6 +155,7 @@ export function importStateFromFile(file) {
           profile: { ...def.profile, ...parsed.profile },
           logs: { ...def.logs, ...parsed.logs },
           calc: { ...def.calc, ...parsed.calc },
+          workouts: parsed.workouts ?? def.workouts,
         })
       } catch (e) {
         reject(e)
