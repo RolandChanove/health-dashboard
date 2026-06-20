@@ -95,6 +95,28 @@ export function ProfileProvider({ children }) {
         logs: { ...s.logs, foods: (s.logs.foods ?? []).filter((e) => e.id !== id) },
       }))
 
+    // --- food templates ---
+    const addFoodTemplate = (template) =>
+      setState((s) => ({
+        ...s,
+        logs: { ...s.logs, foodTemplates: [...(s.logs.foodTemplates ?? []), template] },
+      }))
+
+    const updateFoodTemplate = (id, patch) =>
+      setState((s) => ({
+        ...s,
+        logs: {
+          ...s.logs,
+          foodTemplates: (s.logs.foodTemplates ?? []).map((t) => (t.id === id ? { ...t, ...patch } : t)),
+        },
+      }))
+
+    const deleteFoodTemplate = (id) =>
+      setState((s) => ({
+        ...s,
+        logs: { ...s.logs, foodTemplates: (s.logs.foodTemplates ?? []).filter((t) => t.id !== id) },
+      }))
+
     // --- workout templates ---
     const addWorkoutTemplate = (template) =>
       setState((s) => ({
@@ -356,6 +378,9 @@ export function ProfileProvider({ children }) {
       setLift,
       addFoodEntry,
       removeFoodEntry,
+      addFoodTemplate,
+      updateFoodTemplate,
+      deleteFoodTemplate,
       addWorkoutTemplate,
       updateWorkoutTemplate,
       deleteWorkoutTemplate,

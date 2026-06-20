@@ -47,6 +47,7 @@ export const DEFAULT_STATE = () => {
       waterGoalOz: 100,
       lifts: { bench: 185, squat: 245, deadlift: 315 },
       foods: [],
+      foodTemplates: [],
     },
     calc: {
       goal: 'lose',
