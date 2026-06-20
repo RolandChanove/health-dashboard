@@ -82,6 +82,19 @@ export function ProfileProvider({ children }) {
         logs: { ...s.logs, lifts: { ...s.logs.lifts, [lift]: Number(weight) } },
       }))
 
+    // --- food log ---
+    const addFoodEntry = (entry) =>
+      setState((s) => ({
+        ...s,
+        logs: { ...s.logs, foods: [...(s.logs.foods ?? []), entry] },
+      }))
+
+    const removeFoodEntry = (id) =>
+      setState((s) => ({
+        ...s,
+        logs: { ...s.logs, foods: (s.logs.foods ?? []).filter((e) => e.id !== id) },
+      }))
+
     // --- workout templates ---
     const addWorkoutTemplate = (template) =>
       setState((s) => ({
@@ -341,6 +354,8 @@ export function ProfileProvider({ children }) {
       addWater,
       setWaterGoal,
       setLift,
+      addFoodEntry,
+      removeFoodEntry,
       addWorkoutTemplate,
       updateWorkoutTemplate,
       deleteWorkoutTemplate,

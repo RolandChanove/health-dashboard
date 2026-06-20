@@ -46,6 +46,7 @@ export const DEFAULT_STATE = () => {
       water: seeded.water,
       waterGoalOz: 100,
       lifts: { bench: 185, squat: 245, deadlift: 315 },
+      foods: [],
     },
     calc: {
       goal: 'lose',
@@ -182,7 +183,7 @@ export function exportStateToFile(state) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `corpus-${new Date().toISOString().slice(0, 10)}.json`
+  a.download = `corpra-${new Date().toISOString().slice(0, 10)}.json`
   document.body.appendChild(a)
   a.click()
   a.remove()

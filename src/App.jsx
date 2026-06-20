@@ -5,7 +5,7 @@ import { StatsSummary } from './components/StatsSummary.jsx'
 import { WeightChart } from './components/WeightChart.jsx'
 import { WaterChart } from './components/WaterChart.jsx'
 import { CalorieCalculator } from './components/CalorieCalculator.jsx'
-import { MicronutrientPanel } from './components/MicronutrientPanel.jsx'
+import { FoodLog } from './components/FoodLog.jsx'
 import { StrengthRatios } from './components/StrengthRatios.jsx'
 import { WorkoutsTab } from './components/WorkoutsTab.jsx'
 import { TodayWorkout } from './components/TodayWorkout.jsx'
@@ -34,7 +34,7 @@ export default function App() {
               <CorpusIcon />
             </div>
             <div>
-              <h1 className="text-lg font-bold leading-none text-slate-800">Corpus</h1>
+              <h1 className="text-lg font-bold leading-none text-slate-800">Corpra</h1>
               <p className="text-xs text-slate-400">Track · Train · Improve</p>
             </div>
           </div>
@@ -128,7 +128,7 @@ export default function App() {
         {tab === 'nutrition' && (
           <div className="space-y-5">
             <CalorieCalculator />
-            <MicronutrientPanel />
+            <FoodLog />
           </div>
         )}
 
