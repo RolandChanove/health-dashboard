@@ -224,6 +224,30 @@ export function bodyComposition({ weightLb, bodyFatPct }) {
   return { fatMassLb: fat, leanMassLb: weightLb - fat }
 }
 
+// Fat-Free Mass Index — measures muscular development independent of body fat.
+// Formula: FFMI = lean_mass_kg / height_m²
+// Normalized FFMI adjusts for height relative to 1.8 m reference: FFMI + 6.1*(1.8 - h)
+// Requires body-fat % to be set. Returns null otherwise.
+export function computeFFMI({ weightLb, heightIn, bodyFatPct }) {
+  if (bodyFatPct == null || bodyFatPct <= 0 || bodyFatPct >= 100) return null
+  const weightKg = lbToKg(weightLb)
+  const heightM = inToCm(heightIn) / 100
+  if (heightM <= 0) return null
+  const leanKg = weightKg * (1 - bodyFatPct / 100)
+  const ffmi = leanKg / (heightM * heightM)
+  const ffmiNorm = ffmi + 6.1 * (1.8 - heightM)
+  return { ffmi: Math.round(ffmi * 10) / 10, ffmiNorm: Math.round(ffmiNorm * 10) / 10 }
+}
+
+export function ffmiCategory(ffmiNorm) {
+  if (ffmiNorm < 17) return { label: 'Below avg', color: '#6E6E72' }
+  if (ffmiNorm < 20) return { label: 'Average',   color: '#5D707F' }
+  if (ffmiNorm < 22) return { label: 'Above avg', color: '#22c55e' }
+  if (ffmiNorm < 24) return { label: 'Excellent', color: '#E8C547' }
+  if (ffmiNorm < 26) return { label: 'Superior',  color: '#a855f7' }
+  return                      { label: 'Elite',    color: '#9C3848' }
+}
+
 // ---------------------------------------------------------------------------
 // Strength ratios + levels (lift ÷ bodyweight)
 // ---------------------------------------------------------------------------
@@ -233,14 +257,14 @@ export function bodyComposition({ weightLb, bodyFatPct }) {
 // Derived from common strength-standard tables (e.g. ExRx-style ratios).
 const STRENGTH_STANDARDS = {
   male: {
-    bench: [0.5, 0.75, 1.0, 1.5, 2.0],
-    squat: [0.75, 1.25, 1.5, 2.25, 2.75],
-    deadlift: [1.0, 1.5, 2.0, 2.5, 3.0],
+    bench:    [0.5, 0.75, 1.0, 1.5, 2.0, 2.25],
+    squat:    [0.75, 1.25, 1.5, 2.25, 2.75, 3.0],
+    deadlift: [1.0, 1.5, 2.0, 2.5, 3.0, 3.5],
   },
   female: {
-    bench: [0.35, 0.5, 0.75, 1.0, 1.5],
-    squat: [0.5, 0.75, 1.25, 1.75, 2.25],
-    deadlift: [0.5, 1.0, 1.25, 1.75, 2.5],
+    bench:    [0.35, 0.5, 0.75, 1.0, 1.5, 1.75],
+    squat:    [0.5, 0.75, 1.25, 1.75, 2.25, 2.75],
+    deadlift: [0.5, 1.0, 1.25, 1.75, 2.5, 3.0],
   },
 }
 
@@ -250,14 +274,16 @@ export const STRENGTH_LEVELS = [
   'Intermediate',
   'Advanced',
   'Elite',
+  'Freak',
 ]
 
 export const STRENGTH_LEVEL_COLORS = {
-  Untrained: '#94a3b8',
-  Novice: '#38bdf8',
+  Untrained:    '#6E6E72',
+  Novice:       '#38bdf8',
   Intermediate: '#22c55e',
-  Advanced: '#f59e0b',
-  Elite: '#a855f7',
+  Advanced:     '#f59e0b',
+  Elite:        '#a855f7',
+  Freak:        '#E8C547',
 }
 
 // lift: 'bench' | 'squat' | 'deadlift'

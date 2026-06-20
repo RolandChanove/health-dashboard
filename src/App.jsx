@@ -27,7 +27,7 @@ export default function App() {
   return (
     <div className="min-h-full">
       {/* Header */}
-      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/80 backdrop-blur">
+      <header className="sticky top-0 z-10 border-b border-slate-200 bg-[#0D0D0F]/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2">
             <div className="grid h-9 w-9 place-items-center rounded-xl bg-brand-600 text-white">
@@ -93,8 +93,8 @@ export default function App() {
                 onClick={() => setTab(t.id)}
                 className={`rounded-lg px-3.5 py-1.5 text-sm font-medium transition ${
                   tab === t.id
-                    ? 'bg-brand-50 text-brand-700'
-                    : 'text-slate-500 hover:bg-slate-100'
+                    ? 'bg-brand-600 text-white'
+                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
                 }`}
               >
                 {t.label}
@@ -151,17 +151,23 @@ export default function App() {
 function CorpusIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="6" r="3" fill="white" />
+      <circle cx="12" cy="5.5" r="2.8" fill="white" />
       <path
-        d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"
+        d="M7 22v-3a5 5 0 0 1 10 0v3"
         stroke="white"
         strokeWidth="2"
         strokeLinecap="round"
       />
       <path
-        d="M8 13h8M10 16l-1 5M14 16l1 5"
-        stroke="#93c5fd"
-        strokeWidth="1.4"
+        d="M7 14h10"
+        stroke="rgba(255,255,255,0.55)"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+      <path
+        d="M9.5 14l-1 8M14.5 14l1 8"
+        stroke="rgba(255,255,255,0.4)"
+        strokeWidth="1.3"
         strokeLinecap="round"
       />
     </svg>

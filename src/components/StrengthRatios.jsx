@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useProfile } from '../context/ProfileContext.jsx'
 import { Card } from './ui/Card.jsx'
-import { strengthRatio, STRENGTH_LEVELS } from '../lib/health.js'
+import { strengthRatio, STRENGTH_LEVELS, STRENGTH_LEVEL_COLORS } from '../lib/health.js'
 import {
   weightUnit,
   lbToKg,
@@ -99,9 +99,10 @@ export function StrengthRatios() {
       </div>
 
       {/* Level legend */}
-      <div className="mt-5 flex flex-wrap gap-x-4 gap-y-1 border-t border-slate-100 pt-3">
+      <div className="mt-5 flex flex-wrap gap-x-4 gap-y-1.5 border-t border-slate-200 pt-3">
         {STRENGTH_LEVELS.map((lvl) => (
-          <span key={lvl} className="text-[11px] text-slate-400">
+          <span key={lvl} className="flex items-center gap-1.5 text-[11px] text-slate-500">
+            <span className="h-2 w-2 rounded-full shrink-0" style={{ background: STRENGTH_LEVEL_COLORS[lvl] }} />
             {lvl}
           </span>
         ))}

@@ -16,6 +16,8 @@ import {
   bmiCategory,
   bodyComposition,
   strengthRatio,
+  computeFFMI,
+  ffmiCategory,
 } from '../lib/health.js'
 import { formatWeight, formatHeight, weightUnit, lbToKg } from '../lib/units.js'
 
@@ -27,6 +29,8 @@ export function StatsSummary() {
   const bmiVal = useMemo(() => bmi(profile), [profile])
   const bmiCat = bmiCategory(bmiVal)
   const comp = useMemo(() => bodyComposition(profile), [profile])
+  const ffmi = useMemo(() => computeFFMI(profile), [profile])
+  const ffmiCat = ffmi ? ffmiCategory(ffmi.ffmiNorm) : null
 
   // Radar: normalize key stats to 0–100 against sensible reference ranges so
   // they're comparable on one axis.
@@ -78,6 +82,14 @@ export function StatsSummary() {
         )}
         <StatCard label="BMR" value={Math.round(bmr)} unit="kcal" hint={method} />
         <StatCard label="Maintenance (TDEE)" value={Math.round(tdee)} unit="kcal" />
+        {ffmi && (
+          <StatCard
+            label="FFMI"
+            value={ffmi.ffmiNorm}
+            hint={ffmiCat.label}
+            accent="text-slate-900"
+          />
+        )}
       </div>
 
       <div className="mt-5 grid items-center gap-4 lg:grid-cols-[1fr,1.1fr]">
