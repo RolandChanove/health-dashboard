@@ -1,6 +1,6 @@
 /*
   # Only allow resources from your own domain + the CDN sources the app actually uses
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://zkpntmklqesdrtyzbgym.supabase.co; frame-ancestors 'none'
   # Prevent your page from being embedded in iframes (clickjacking)
   X-Frame-Options: DENY
   # Stop browsers from guessing content types
