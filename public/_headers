@@ -5,6 +5,8 @@
   X-Frame-Options: DENY
   # Stop browsers from guessing content types
   X-Content-Type-Options: nosniff
+  # Tell browsers to always use HTTPS for this domain for 1 year
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
   # Don't send your URL as referrer to external sites
   Referrer-Policy: strict-origin-when-cross-origin
   # Restrict powerful browser features (camera, mic, etc.) — none needed for this app
