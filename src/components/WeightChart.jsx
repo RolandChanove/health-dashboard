@@ -18,6 +18,7 @@ import {
   projectWeight,
 } from '../lib/health.js'
 import { lbToKg, weightUnit, toCanonicalWeight } from '../lib/units.js'
+import { TOOLTIP_PROPS, CHART_GRID, CHART_TICK } from '../lib/chartTheme.js'
 
 // local date helpers
 function shortDate(iso) {
@@ -109,18 +110,18 @@ export function WeightChart() {
       <div className="h-72 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 5, right: 10, bottom: 0, left: -10 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#2E2E30" />
-            <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#8E8E92' }} minTickGap={24} />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
+            <XAxis dataKey="label" tick={{ fontSize: 11, fill: CHART_TICK }} minTickGap={24} />
             <YAxis
               domain={['dataMin - 2', 'dataMax + 2']}
-              tick={{ fontSize: 11, fill: '#8E8E92' }}
+              tick={{ fontSize: 11, fill: CHART_TICK }}
               width={44}
               tickFormatter={(v) => Math.round(v)}
             />
             <Tooltip
+              {...TOOLTIP_PROPS}
               formatter={(v, name) => [`${v} ${unit}`, name === 'actual' ? 'Logged' : 'Projected']}
               labelFormatter={(l) => `Date: ${l}`}
-              contentStyle={{ borderRadius: 12, border: '1px solid #2E2E30', fontSize: 12, backgroundColor: '#141416', color: '#E0E0E2' }}
             />
             {showProjection && (
               <Line

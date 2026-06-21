@@ -13,6 +13,7 @@ import {
 import { useProfile } from '../context/ProfileContext.jsx'
 import { Card } from './ui/Card.jsx'
 import { ozToMl, volumeUnit } from '../lib/units.js'
+import { TOOLTIP_PROPS, CHART_GRID, CHART_TICK } from '../lib/chartTheme.js'
 
 function shortDate(iso) {
   const [, m, d] = iso.split('-')
@@ -82,13 +83,13 @@ export function WaterChart() {
       <div className="h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 5, right: 10, bottom: 0, left: -10 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#2E2E30" vertical={false} />
-            <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#8E8E92' }} minTickGap={16} />
-            <YAxis tick={{ fontSize: 11, fill: '#8E8E92' }} width={44} />
+            <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} vertical={false} />
+            <XAxis dataKey="label" tick={{ fontSize: 11, fill: CHART_TICK }} minTickGap={16} />
+            <YAxis tick={{ fontSize: 11, fill: CHART_TICK }} width={44} />
             <Tooltip
+              {...TOOLTIP_PROPS}
               formatter={(v) => [`${v} ${unit}`, 'Water']}
-              contentStyle={{ borderRadius: 12, border: '1px solid #2E2E30', fontSize: 12, backgroundColor: '#141416', color: '#E0E0E2' }}
-              cursor={{ fill: '#2E2E30' }}
+              cursor={{ fill: 'rgba(255,255,255,0.04)' }}
             />
             <ReferenceLine
               y={goalDisplay}

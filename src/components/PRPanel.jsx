@@ -5,6 +5,7 @@ import {
 import { useProfile } from '../context/ProfileContext.jsx'
 import { Card } from './ui/Card.jsx'
 import { lbToKg, kgToLb, round } from '../lib/units.js'
+import { TOOLTIP_PROPS, CHART_GRID, CHART_TICK } from '../lib/chartTheme.js'
 
 const LIFTS = [
   { key: 'bench',    label: 'Bench Press', color: '#9C3848' },
@@ -115,16 +116,16 @@ export function PRPanel() {
         <div className="h-48 w-full mb-4">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData} margin={{ top: 4, right: 10, bottom: 0, left: -10 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2E2E30" />
-              <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#8E8E92' }} minTickGap={20} />
+              <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: CHART_TICK }} minTickGap={20} />
               <YAxis
                 domain={['dataMin - 10', 'dataMax + 10']}
-                tick={{ fontSize: 11, fill: '#8E8E92' }}
+                tick={{ fontSize: 11, fill: CHART_TICK }}
                 width={44}
                 tickFormatter={(v) => `${v}`}
               />
               <Tooltip
-                contentStyle={{ backgroundColor: '#141416', border: '1px solid #2E2E30', borderRadius: 8, fontSize: 12, color: '#E0E0E2' }}
+                {...TOOLTIP_PROPS}
                 formatter={(v) => [`${v} ${unit}`, 'Weight']}
               />
               <Line

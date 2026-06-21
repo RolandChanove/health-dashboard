@@ -6,10 +6,7 @@ import { useProfile } from '../context/ProfileContext.jsx'
 import { lbToKg, round } from '../lib/units.js'
 import { Card } from './ui/Card.jsx'
 
-const CHART_GRID   = '#2E2E30'
-const CHART_TICK   = '#8E8E92'
-const LINE_COLOR   = '#9C3848'
-const TT_STYLE     = { backgroundColor: '#141416', border: '1px solid #2E2E30', borderRadius: 8, fontSize: 12, color: '#E0E0E2' }
+import { TOOLTIP_PROPS, CHART_GRID, CHART_TICK, BRAND_LINE as LINE_COLOR } from '../lib/chartTheme.js'
 
 function shortDate(iso) {
   const [, m, d] = iso.split('-')
@@ -91,7 +88,7 @@ export function WorkoutHistory() {
               <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
               <XAxis dataKey="date" tick={{ fontSize: 11, fill: CHART_TICK }} />
               <YAxis tick={{ fontSize: 11, fill: CHART_TICK }} unit={` ${wtUnit}`} />
-              <Tooltip contentStyle={TT_STYLE} formatter={(v) => [`${v} ${wtUnit}`, 'Max Weight']} />
+              <Tooltip {...TOOLTIP_PROPS} formatter={(v) => [`${v} ${wtUnit}`, 'Max Weight']} />
               <Line type="monotone" dataKey="weight" stroke={LINE_COLOR} strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
             </LineChart>
           </ResponsiveContainer>

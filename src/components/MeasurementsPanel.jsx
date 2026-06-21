@@ -5,6 +5,7 @@ import {
 import { useProfile } from '../context/ProfileContext.jsx'
 import { Card } from './ui/Card.jsx'
 import { inToCm, cmToIn, round } from '../lib/units.js'
+import { TOOLTIP_PROPS, CHART_GRID, CHART_TICK } from '../lib/chartTheme.js'
 
 const FIELDS = [
   { key: 'chest',  label: 'Chest',       color: '#9C3848' },
@@ -121,16 +122,16 @@ export function MeasurementsPanel() {
           <div className="h-60 w-full mb-4">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} margin={{ top: 4, right: 10, bottom: 0, left: -10 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2E2E30" />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#8E8E92' }} minTickGap={20} />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: CHART_TICK }} minTickGap={20} />
                 <YAxis
                   domain={['dataMin - 1', 'dataMax + 1']}
-                  tick={{ fontSize: 11, fill: '#8E8E92' }}
+                  tick={{ fontSize: 11, fill: CHART_TICK }}
                   width={40}
                   unit={unit}
                 />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#141416', border: '1px solid #2E2E30', borderRadius: 8, fontSize: 12, color: '#E0E0E2' }}
+                  {...TOOLTIP_PROPS}
                   formatter={(v, name) => {
                     const f = FIELDS.find((x) => x.key === name)
                     return [`${v} ${unit}`, f?.label ?? name]

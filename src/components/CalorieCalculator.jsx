@@ -17,6 +17,7 @@ import {
   DIET_PRESETS,
 } from '../lib/health.js'
 import { weightUnit, lbToKg, kgToLb } from '../lib/units.js'
+import { TOOLTIP_PROPS } from '../lib/chartTheme.js'
 
 const MACRO_COLORS = { protein: '#5D707F', carbs: '#4A8A5F', fat: '#E8C547' }
 
@@ -128,8 +129,8 @@ export function CalorieCalculator() {
                   ))}
                 </Pie>
                 <Tooltip
+                  {...TOOLTIP_PROPS}
                   formatter={(v, n, p) => [`${p.payload.grams} g (${v} kcal)`, n]}
-                  contentStyle={{ borderRadius: 12, border: '1px solid #2E2E30', fontSize: 12, backgroundColor: '#141416', color: '#E0E0E2' }}
                 />
                 <Legend
                   verticalAlign="bottom"

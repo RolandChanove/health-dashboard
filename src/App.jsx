@@ -10,15 +10,17 @@ import { StrengthRatios } from './components/StrengthRatios.jsx'
 import { MeasurementsPanel } from './components/MeasurementsPanel.jsx'
 import { PRPanel } from './components/PRPanel.jsx'
 import { WorkoutsTab } from './components/WorkoutsTab.jsx'
+import { ProgramsTab } from './components/ProgramsTab.jsx'
 import { TodayWorkout } from './components/TodayWorkout.jsx'
 import { SegmentedControl } from './components/ui/Field.jsx'
 
 const TABS = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'tracking', label: 'Tracking' },
+  { id: 'overview',  label: 'Overview' },
+  { id: 'tracking',  label: 'Tracking' },
   { id: 'nutrition', label: 'Nutrition' },
-  { id: 'strength', label: 'Strength' },
-  { id: 'workouts', label: 'Workouts' },
+  { id: 'strength',  label: 'Strength' },
+  { id: 'workouts',  label: 'Workouts' },
+  { id: 'programs',  label: 'Programs' },
 ]
 
 export default function App() {
@@ -145,6 +147,7 @@ export default function App() {
         )}
 
         {tab === 'workouts' && <WorkoutsTab />}
+        {tab === 'programs' && <ProgramsTab />}
       </main>
 
       <footer className="mx-auto max-w-6xl px-4 pb-8 pt-2 text-center text-xs text-slate-400 sm:px-6">
