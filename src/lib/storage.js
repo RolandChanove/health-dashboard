@@ -217,3 +217,39 @@ export function importStateFromFile(file) {
 }
 
 export { STORAGE_KEY }
+
+// ─── Supabase sync ────────────────────────────────────────────────────────────
+
+export async function loadFromSupabase(userId) {
+  try {
+    const { supabase } = await import('./supabase.js')
+    const { data, error } = await supabase
+      .from('user_data')
+      .select('state')
+      .eq('user_id', userId)
+      .maybeSingle()
+    if (error || !data?.state) return null
+    const def = DEFAULT_STATE()
+    return {
+      profile:  { ...def.profile,  ...data.state.profile  },
+      logs:     { ...def.logs,     ...data.state.logs     },
+      calc:     { ...def.calc,     ...data.state.calc     },
+      workouts: migrateWorkouts(data.state.workouts ?? def.workouts),
+    }
+  } catch {
+    return null
+  }
+}
+
+export async function syncToSupabase(userId, state) {
+  try {
+    const { supabase } = await import('./supabase.js')
+    await supabase.from('user_data').upsert({
+      user_id:    userId,
+      state,
+      updated_at: new Date().toISOString(),
+    })
+  } catch {
+    // fail silently — localStorage is the live fallback
+  }
+}

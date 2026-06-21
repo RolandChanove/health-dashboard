@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import {
   loadState,
   saveState,
@@ -7,16 +7,72 @@ import {
   exportStateToFile,
   importStateFromFile,
   isoDaysAgo,
+  loadFromSupabase,
+  syncToSupabase,
 } from '../lib/storage.js'
+import { supabase } from '../lib/supabase.js'
 
 const ProfileContext = createContext(null)
 
 export function ProfileProvider({ children }) {
   const [state, setState] = useState(loadState)
+  const [authUser, setAuthUser] = useState(null)
+  const [authLoading, setAuthLoading] = useState(true)
+  const syncEnabled = useRef(false)
 
+  // Persist to localStorage on every state change
   useEffect(() => {
     saveState(state)
   }, [state])
+
+  // Debounced Supabase sync — only fires when auth is ready
+  useEffect(() => {
+    if (!authUser || !syncEnabled.current) return
+    const timer = setTimeout(() => syncToSupabase(authUser.id, state), 2000)
+    return () => clearTimeout(timer)
+  }, [state, authUser])
+
+  // Auth lifecycle
+  useEffect(() => {
+    async function loadRemote(user) {
+      const remote = await loadFromSupabase(user.id)
+      if (remote) {
+        setState(remote)
+        saveState(remote)
+      } else {
+        // First sign-in: push current localStorage data up to Supabase
+        syncToSupabase(user.id, loadState())
+      }
+      syncEnabled.current = true
+    }
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const user = session?.user ?? null
+      setAuthUser(user)
+      if (user) {
+        loadRemote(user).finally(() => setAuthLoading(false))
+      } else {
+        setAuthLoading(false)
+      }
+    }).catch(() => setAuthLoading(false))
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        setAuthUser(session.user)
+        setAuthLoading(true)
+        loadRemote(session.user).finally(() => setAuthLoading(false))
+      }
+      if (event === 'SIGNED_OUT') {
+        syncEnabled.current = false
+        setAuthUser(null)
+        clearState()
+        setState(DEFAULT_STATE())
+        setAuthLoading(false)
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   const api = useMemo(() => {
     // --- profile ---
@@ -446,6 +502,8 @@ export function ProfileProvider({ children }) {
       setState(next)
     }
 
+    const signOut = () => supabase.auth.signOut()
+
     return {
       setProfile,
       setUnits,
@@ -487,10 +545,14 @@ export function ProfileProvider({ children }) {
       resetData,
       exportData,
       importData,
+      signOut,
     }
   }, [state])
 
-  const value = useMemo(() => ({ ...state, ...api }), [state, api])
+  const value = useMemo(
+    () => ({ ...state, ...api, authUser, authLoading }),
+    [state, api, authUser, authLoading],
+  )
 
   return <ProfileContext.Provider value={value}>{children}</ProfileContext.Provider>
 }

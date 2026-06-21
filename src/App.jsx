@@ -11,6 +11,7 @@ import { MeasurementsPanel } from './components/MeasurementsPanel.jsx'
 import { PRPanel } from './components/PRPanel.jsx'
 import { WorkoutsTab } from './components/WorkoutsTab.jsx'
 import { ProgramsTab } from './components/ProgramsTab.jsx'
+import { AuthGate } from './components/AuthGate.jsx'
 import { TodayWorkout } from './components/TodayWorkout.jsx'
 import { SegmentedControl } from './components/ui/Field.jsx'
 
@@ -24,9 +25,24 @@ const TABS = [
 ]
 
 export default function App() {
-  const { profile, toggleUnits, resetData, exportData, importData } = useProfile()
+  const { profile, toggleUnits, resetData, exportData, importData, authUser, authLoading, signOut } = useProfile()
   const [tab, setTab] = useState('overview')
   const fileRef = useRef(null)
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#0D0D0F] flex items-center justify-center">
+        <div className="text-center space-y-3">
+          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-brand-600 text-white mx-auto">
+            <CorpusIcon />
+          </div>
+          <p className="text-slate-400 text-sm">Loading…</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!authUser) return <AuthGate />
 
   return (
     <div className="min-h-full">
@@ -85,6 +101,20 @@ export default function App() {
             >
               Reset
             </button>
+
+            <div className="ml-1 h-5 w-px bg-slate-200" />
+
+            <div className="flex items-center gap-2">
+              <span className="hidden sm:block text-xs text-slate-400 max-w-[140px] truncate">
+                {authUser.email}
+              </span>
+              <button
+                onClick={signOut}
+                className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-500 hover:bg-slate-100"
+              >
+                Sign out
+              </button>
+            </div>
           </div>
         </div>
 
