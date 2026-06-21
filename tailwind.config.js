@@ -40,5 +40,12 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // Safe-area padding for iPhone home indicator
+    function({ addUtilities }) {
+      addUtilities({
+        '.pb-safe': { paddingBottom: 'env(safe-area-inset-bottom, 0px)' },
+      })
+    },
+  ],
 }

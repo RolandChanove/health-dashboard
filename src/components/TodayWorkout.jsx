@@ -125,19 +125,15 @@ function ExerciseLogger({ exercise, exIdx, sessionId, isMetric, locked, updateSe
 
   return (
     <div className="rounded-xl bg-slate-50 p-3">
-      <div className="flex items-center justify-between mb-2">
-        <p className="font-medium text-slate-700">{exercise.name}</p>
-        <span className="text-xs text-slate-400">{doneCount}/{exercise.sets.length}</span>
+      {/* Exercise header */}
+      <div className="flex items-center justify-between mb-3">
+        <p className="font-semibold text-slate-700 text-sm">{exercise.name}</p>
+        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${doneCount === exercise.sets.length ? 'bg-emerald-900/30 text-emerald-400' : 'bg-slate-200 text-slate-500'}`}>
+          {doneCount}/{exercise.sets.length}
+        </span>
       </div>
 
-      <div className="grid grid-cols-[1.5rem_1fr_1fr_1.5rem] gap-x-2 mb-1 px-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-        <span>#</span>
-        <span>Plan</span>
-        <span>Actual</span>
-        <span />
-      </div>
-
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         {exercise.sets.map((set, setIdx) => (
           <SetRow
             key={setIdx}
@@ -152,52 +148,53 @@ function ExerciseLogger({ exercise, exIdx, sessionId, isMetric, locked, updateSe
         ))}
       </div>
 
-      {/* Notes / RPE area */}
-      <div className="mt-2 pt-2 border-t border-slate-200">
+      {/* Add set + notes */}
+      <div className="mt-3 pt-2 border-t border-slate-200 flex items-center justify-between">
+        {!locked && (
+          <button onClick={() => addSet(sessionId, exIdx)} className="text-sm font-medium text-brand-700 hover:text-brand-600 py-1">
+            + Add set
+          </button>
+        )}
         {!locked && (
           <button
             onClick={() => setShowNotes((v) => !v)}
-            className="text-xs text-slate-400 hover:text-brand-700"
+            className="text-xs text-slate-400 hover:text-brand-700 py-1 ml-auto"
           >
-            {showNotes ? '▲ Hide notes' : `▼ RPE / notes${exercise.rpe != null ? ` · RPE ${exercise.rpe}` : ''}${exercise.notes ? ' · has notes' : ''}`}
+            {showNotes ? '▲ Hide' : `RPE / notes${exercise.rpe != null ? ` · ${exercise.rpe}` : ''}${exercise.notes ? ' ✎' : ''}`}
           </button>
-        )}
-        {(showNotes || locked) && (exercise.rpe != null || exercise.notes || !locked) && (
-          <div className="mt-2 space-y-2">
-            {locked ? (
-              <>
-                {exercise.rpe != null && <p className="text-xs text-slate-500">RPE <span className="font-semibold text-slate-700">{exercise.rpe}/10</span></p>}
-                {exercise.notes && <p className="text-xs text-slate-500 italic">{exercise.notes}</p>}
-              </>
-            ) : (
-              <>
-                <div className="flex items-center gap-3">
-                  <label className="text-xs text-slate-500 shrink-0">RPE (1–10)</label>
-                  <input
-                    type="number" min={1} max={10} step={0.5}
-                    value={exercise.rpe ?? ''}
-                    onChange={(e) => updateNotes({ rpe: e.target.value === '' ? null : Number(e.target.value) })}
-                    className="w-16 rounded-lg px-2 py-1 text-xs ring-1 ring-slate-200 outline-none focus:ring-brand-600"
-                    placeholder="—"
-                  />
-                </div>
-                <textarea
-                  rows={2}
-                  value={exercise.notes ?? ''}
-                  onChange={(e) => updateNotes({ notes: e.target.value })}
-                  placeholder="Form notes, how it felt, deload next week…"
-                  className="w-full rounded-lg px-2 py-1.5 text-xs ring-1 ring-slate-200 outline-none focus:ring-brand-600 resize-none"
-                />
-              </>
-            )}
-          </div>
         )}
       </div>
 
-      {!locked && (
-        <button onClick={() => addSet(sessionId, exIdx)} className="mt-2 text-xs font-medium text-brand-700 hover:text-brand-600">
-          + Add set
-        </button>
+      {(showNotes || locked) && (exercise.rpe != null || exercise.notes || !locked) && (
+        <div className="mt-2 space-y-2">
+          {locked ? (
+            <>
+              {exercise.rpe != null && <p className="text-xs text-slate-500">RPE <span className="font-semibold text-slate-700">{exercise.rpe}/10</span></p>}
+              {exercise.notes && <p className="text-xs text-slate-500 italic">{exercise.notes}</p>}
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-3">
+                <label className="text-xs text-slate-500 shrink-0">RPE</label>
+                <input
+                  type="number" min={1} max={10} step={0.5}
+                  inputMode="decimal"
+                  value={exercise.rpe ?? ''}
+                  onChange={(e) => updateNotes({ rpe: e.target.value === '' ? null : Number(e.target.value) })}
+                  className="w-16 rounded-lg px-2 py-1.5 text-base ring-1 ring-slate-200 outline-none focus:ring-brand-600"
+                  placeholder="—"
+                />
+              </div>
+              <textarea
+                rows={2}
+                value={exercise.notes ?? ''}
+                onChange={(e) => updateNotes({ notes: e.target.value })}
+                placeholder="Form notes, how it felt…"
+                className="w-full rounded-lg px-2 py-2 text-sm ring-1 ring-slate-200 outline-none focus:ring-brand-600 resize-none"
+              />
+            </>
+          )}
+        </div>
       )}
     </div>
   )
@@ -206,69 +203,124 @@ function ExerciseLogger({ exercise, exIdx, sessionId, isMetric, locked, updateSe
 function SetRow({ set, setIdx, isMetric, locked, onChange, onRemove, canRemove }) {
   const { planned, actual } = set
   const done = actual.done
+  const weightStep = isMetric ? 2.5 : 5
 
   const planLabel = (() => {
     if (!planned) return '—'
     if (planned.weightType === 'bodyweight') return `BW × ${planned.reps}`
     if (planned.weightType === 'percent1rm') return `${planned.percentage}% × ${planned.reps}`
-    const w = isMetric ? `${round(lbToKg(planned.weightLb), 1)}kg` : `${planned.weightLb}lb`
-    return `${w} × ${planned.reps}`
+    const w = isMetric ? `${round(lbToKg(planned.weightLb), 1)}` : `${planned.weightLb}`
+    return `${w}${isMetric ? 'kg' : 'lb'} × ${planned.reps}`
   })()
 
-  const actualWeightDisplay = isMetric ? round(lbToKg(actual.weightLb), 1) : actual.weightLb
+  const weightDisplay = isMetric ? round(lbToKg(actual.weightLb), 1) : actual.weightLb
 
-  return (
-    <div className={`grid grid-cols-[1.5rem_1fr_1fr_1.5rem] gap-x-2 items-center rounded-lg px-1 py-0.5 ${done ? 'bg-emerald-900/20' : ''}`}>
-      {/* Set number */}
-      <span className={`text-center text-xs font-bold ${done ? 'text-emerald-500' : 'text-slate-400'}`}>
-        {setIdx + 1}
-      </span>
-
-      {/* Plan (read-only) */}
-      <span className={`text-xs ${done ? 'text-slate-500 line-through' : 'text-slate-600'}`}>
-        {planLabel}
-      </span>
-
-      {/* Actual */}
-      {locked || done ? (
-        <span className="text-xs text-slate-700">
-          {isMetric ? `${round(lbToKg(actual.weightLb), 1)}kg` : `${actual.weightLb}lb`} × {actual.reps}
-          {done && <span className="ml-1 text-emerald-500">✓</span>}
+  // Completed set — compact read-only row
+  if (done) {
+    return (
+      <div className="flex items-center gap-2 rounded-xl bg-emerald-900/20 px-3 py-2">
+        <span className="text-xs font-bold text-emerald-500 w-5 text-center">{setIdx + 1}</span>
+        <span className="flex-1 text-sm text-slate-600 line-through">{planLabel}</span>
+        <span className="text-sm font-medium text-emerald-400">
+          {weightDisplay}{isMetric ? 'kg' : 'lb'} × {actual.reps} ✓
         </span>
-      ) : (
-        <div className="flex items-center gap-1">
+        {!locked && (
+          <button
+            onClick={() => onChange({ done: false })}
+            className="text-slate-500 text-xs hover:text-rose-400 ml-1"
+            title="Undo"
+          >↩</button>
+        )}
+      </div>
+    )
+  }
+
+  // Locked (completed session) — plain read
+  if (locked) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2">
+        <span className="text-xs font-bold text-slate-400 w-5 text-center">{setIdx + 1}</span>
+        <span className="flex-1 text-sm text-slate-500">{planLabel}</span>
+        <span className="text-sm text-slate-700">{weightDisplay}{isMetric ? 'kg' : 'lb'} × {actual.reps}</span>
+      </div>
+    )
+  }
+
+  // Active set — big inputs for mobile
+  return (
+    <div className="rounded-xl bg-slate-100 p-2">
+      {/* Plan hint */}
+      <div className="flex items-center justify-between mb-1.5 px-1">
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">Set {setIdx + 1}</span>
+        <span className="text-[10px] text-slate-400">Plan: {planLabel}</span>
+        {canRemove && (
+          <button onClick={onRemove} className="text-slate-400 hover:text-rose-500 text-base leading-none ml-2">×</button>
+        )}
+      </div>
+
+      {/* Weight / reps / done — large touch targets */}
+      <div className="flex items-center gap-2">
+        {/* Weight */}
+        <div className="flex items-center flex-1 rounded-lg ring-1 ring-slate-200 bg-slate-50 overflow-hidden">
+          <button
+            onClick={() => {
+              const newVal = round(weightDisplay - weightStep, 2)
+              const lb = isMetric ? kgToLb(Math.max(0, newVal)) : Math.max(0, newVal)
+              onChange({ weightLb: round(lb, 2) })
+            }}
+            className="px-2.5 py-3 text-slate-400 hover:text-slate-700 text-lg font-light select-none"
+          >−</button>
           <input
-            type="number" min={0} step={isMetric ? 0.5 : 2.5}
-            value={actualWeightDisplay}
+            type="number" min={0} step={weightStep}
+            inputMode="decimal"
+            value={weightDisplay}
             onChange={(e) => {
               const lb = isMetric ? kgToLb(Number(e.target.value)) : Number(e.target.value)
               onChange({ weightLb: round(lb, 2) })
             }}
-            className="w-14 rounded px-1.5 py-1 text-xs ring-1 ring-slate-200 outline-none focus:ring-brand-600"
+            className="w-0 flex-1 text-center text-base font-semibold bg-transparent outline-none text-slate-800 py-3"
           />
-          <span className="text-slate-400 text-[10px]">×</span>
+          <span className="text-xs text-slate-400 pr-1">{isMetric ? 'kg' : 'lb'}</span>
+          <button
+            onClick={() => {
+              const newVal = round(weightDisplay + weightStep, 2)
+              const lb = isMetric ? kgToLb(newVal) : newVal
+              onChange({ weightLb: round(lb, 2) })
+            }}
+            className="px-2.5 py-3 text-slate-400 hover:text-slate-700 text-lg font-light select-none"
+          >+</button>
+        </div>
+
+        <span className="text-slate-400 text-sm">×</span>
+
+        {/* Reps */}
+        <div className="flex items-center rounded-lg ring-1 ring-slate-200 bg-slate-50 overflow-hidden">
+          <button
+            onClick={() => onChange({ reps: Math.max(1, actual.reps - 1) })}
+            className="px-2 py-3 text-slate-400 hover:text-slate-700 text-lg font-light select-none"
+          >−</button>
           <input
             type="number" min={1}
+            inputMode="numeric"
             value={actual.reps}
-            onChange={(e) => onChange({ reps: Number(e.target.value) })}
-            className="w-10 rounded px-1.5 py-1 text-xs ring-1 ring-slate-200 outline-none focus:ring-brand-600"
+            onChange={(e) => onChange({ reps: Math.max(1, Number(e.target.value)) })}
+            className="w-8 text-center text-base font-semibold bg-transparent outline-none text-slate-800 py-3"
           />
           <button
-            onClick={() => onChange({ done: true })}
-            className="rounded px-1.5 py-1 text-xs bg-slate-200 text-slate-500 hover:bg-emerald-700 hover:text-white transition"
-            title="Mark done"
-          >
-            ✓
-          </button>
+            onClick={() => onChange({ reps: actual.reps + 1 })}
+            className="px-2 py-3 text-slate-400 hover:text-slate-700 text-lg font-light select-none"
+          >+</button>
         </div>
-      )}
 
-      {/* Remove */}
-      {!locked && canRemove ? (
-        <button onClick={onRemove} className="text-slate-400 hover:text-rose-500 text-center leading-none">×</button>
-      ) : (
-        <span />
-      )}
+        {/* Done button — large green CTA */}
+        <button
+          onClick={() => onChange({ done: true })}
+          className="rounded-xl bg-emerald-800 hover:bg-emerald-700 active:bg-emerald-600 text-white font-bold text-base px-4 py-3 transition select-none"
+          title="Mark set done"
+        >
+          ✓
+        </button>
+      </div>
     </div>
   )
 }
